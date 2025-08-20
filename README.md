@@ -4,7 +4,7 @@
 
 **本项目的相关配置如下：**
 
-- <u>嵌入式</u>：开发板使用的是**STM32F401RE**（如果是其它开发板，可以在---重新设置你的配置），主频为84MHZ，WIFI模块使用了大夏龙雀的WF24-A，如果需要查看开发板发送的信息，可以再加一个CH340 USB转TTL模块
+- <u>嵌入式</u>：开发板使用的是**STM32F401RE**（如果是其它开发板，可以在[嵌入式](#es)重新设置你的配置），主频为84MHZ，WIFI模块使用了大夏龙雀的WF24-A，如果需要查看开发板发送的信息，可以再加一个CH340 USB转TTL模块
 
 - <u>服务器端</u>：使用了阿里云服务器，系统为**ubuntu_20_04**，配置为**2核2G**
 
@@ -55,7 +55,7 @@ sudo apt-get install libpcre3 libpcre3-dev libwebsockets-dev
 使用git clone下载项目
 
 ```shell
-git clone ---
+git clone https://github.com/earky/ES-Boot-and-ES-Server.git
 ```
 
 进入build文件夹进行编译
@@ -151,9 +151,9 @@ cd /usr/local/nginx/sbin/
 ./nginx
 ```
 
-## 4.嵌入式
+## 4.嵌入式  
 
-在项目介绍中已经提到过，使用的开发板是STM32F401RE，这里主要介绍如何配置你的keil项目，如果你的开发板也是STM32F401RE，那么直接进入网页下载就可以了
+<a id="es"></a>在项目介绍中已经提到过，使用的开发板是STM32F401RE，这里主要介绍如何配置你的keil项目，如果你的开发板也是STM32F401RE，那么直接进入网页下载就可以了
 
 - **WiFi模块配置：**
 
