@@ -1,0 +1,7 @@
+--c99 -c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I .\CMSIS -I .\Library -I .\User -I .\function -I .\Source -I .\Ports
+-I.\RTE\_Target_1
+-IC:\download\Keil5\ARM\PACK\Keil\STM32F4xx_DFP\2.17.1\Drivers\CMSIS\Device\ST\STM32F4xx\Include
+-IC:\download\Keil5\ARM\CMSIS\Include
+-IC:\download\Keil5\ARM\PACK\Keil\STM32F4xx_DFP\2.17.1\Device\Include
+-D__UVISION_VERSION="527" -DSTM32F401xE -DSTM32F401xx -DUSE_STDPERIPH_DRIVER
+-o .\objects\os_dbg_r.o --omf_browse .\objects\os_dbg_r.crf --depend .\objects\os_dbg_r.d "Source\os_dbg_r.c"

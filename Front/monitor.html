@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>无人机控制系统</title>
+
+    <!-- 引入Three.js及其组件 -->
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.173.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.173.0/examples/jsm/"
+          }
+        }
+    </script>
+
+    <style>
+        :root {
+            --red: #ff4444;
+            --green: #44ff44;
+            --gray: #cccccc;
+            --blue: #3a6ea5;
+            --purple: #8a2be2;
+            --orange: #ff7f50;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        
+        body {
+            background: #1e1f2b;
+            color: #e0e0ff;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .panel {
+            background: #2a2b3a;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .full-width {
+            grid-column: span 2;
+        }
+        
+        h1, h2, h3 {
+            color: #6cb8ff;
+            margin-bottom: 15px;
+        }
+        
+        .connection-panel {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .connection-main {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-grow: 1;
+        }
+        
+        .download-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .status-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: var(--red);
+            box-shadow: 0 0 10px var(--red);
+            transition: all 0.3s ease;
+        }
+        
+        .status-indicator.connected {
+            background-color: var(--green);
+            box-shadow: 0 0 10px var(--green);
+        }
+        
+        #device-id {
+            padding: 10px;
+            width: 150px;
+            border: 1px solid #444;
+            background: #333;
+            color: white;
+            border-radius: 4px;
+        }
+        
+        button {
+            background: var(--blue);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        button:hover {
+            filter: brightness(1.2);
+            transform: translateY(-2px);
+        }
+        
+        .tab-container {
+            margin-bottom: 20px;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #444;
+            margin-bottom: 15px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #333;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+            transition: all 0.3s;
+        }
+        
+        .tab:hover {
+            background: #444;
+        }
+        
+        .tab.active {
+            background: var(--blue);
+        }
+        
+        .tab-content > div {
+            display: none;
+        }
+        
+        .tab-content > div.active {
+            display: block;
+        }
+        
+        .log-container {
+            height: 300px;
+            overflow-y: auto;
+            background: #222;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        
+        .filter-options {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .filter-options label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        #model-container {
+            height: 400px;
+            background: #111;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .file-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        
+        .file-item {
+            padding: 10px;
+            background: #333;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .file-item.active {
+            border: 2px solid var(--blue);
+            order: -1;
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .slider-container {
+            margin-bottom: 15px;
+        }
+        
+        .slider-container label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+        }
+        
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 8px;
+            background: #333;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .ota-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .pid-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        /* 调整滑块容器样式 */
+        .slider-container {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slider-container label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider-container input[type="range"] {
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+
+        .slider-container input[type="number"] {
+            align-self: flex-end;
+            margin-top: 5px;
+        }
+        
+        /* 加载指示器样式 */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            flex-direction: column;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #6cb8ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .model-title {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 15px;
+            border-radius: 5px;
+            color: #6cb8ff;
+            font-size: 14px;
+            z-index: 10;
+        }
+        
+        .axis-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 0, 0, 0.3);
+            z-index: 5;
+        }
+        
+        .x-axis {
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .y-axis {
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            height: 100%;
+            transform: translateX(-50%);
+        }
+        
+        /* 新下载按钮样式 */
+        #download-bootloader {
+            background: var(--purple);
+        }
+        
+        #download-app {
+            background: var(--orange);
+        }
+        
+        .btn-icon {
+            font-size: 16px;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .connection-panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .download-actions {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="panel full-width">
+            <h1>无人机控制系统</h1>
+            <div class="connection-panel">
+                <div class="connection-main">
+                    <input type="text" id="device-id" placeholder="设备ID (8字符)" maxlength="8">
+                    <div class="status-indicator" id="status-indicator"></div>
+                    <button id="reset-btn">RESET</button>
+                    <button id="connect-btn">连接</button>
+                </div>
+                <!-- 新增下载按钮 -->
+                <div class="download-actions">
+                    <button id="download-bootloader">
+                        <span class="btn-icon">↓</span> 下载Bootloader
+                    </button>
+                    <button id="download-app">
+                        <span class="btn-icon">↓</span> 下载示例APP
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="tab-container">
+                <div class="tabs">
+                    <div class="tab active" data-tab="data">数据监控</div>
+                    <div class="tab" data-tab="ota">OTA管理</div>
+                    <div class="tab" data-tab="pid">PID控制</div>
+                </div>
+                <div class="tab-content">
+                    <!-- 数据监控面板 -->
+                    <div id="data-tab" class="active">
+                        <div class="filter-options">
+                            <label><input type="checkbox" id="filter-gy86" checked> GY86</label>
+                            <label><input type="checkbox" id="filter-servo" checked> Servo</label>
+                            <label><input type="checkbox" id="filter-log" checked> Log</label>
+                        </div>
+                        <div class="log-container" id="data-output"></div>
+                    </div>
+                    
+                    <!-- OTA管理面板 -->
+                    <div id="ota-tab">
+                        <h3>固件文件管理</h3>
+                        <div class="ota-actions">
+                            <button id="refresh-file-list">更新文件列表</button>
+                        </div>
+                        <div class="file-list" id="file-list">
+                            <!-- 文件列表动态生成 -->
+                        </div>
+                        
+                        <h3>上传新固件</h3>
+                        <div class="form-group">
+                            <label>选择文件 (vxx.xx.bin):</label>
+                            <input type="file" id="firmware-file">
+                        </div>
+                        <div class="form-group">
+                            <label>文件描述:</label>
+                            <textarea id="file-description" rows="3"></textarea>
+                        </div>
+                        <button id="upload-btn">上传固件</button>
+                    </div>
+                    
+                    <!-- PID控制面板 -->
+                    <div id="pid-tab">
+                        <!-- Pitch PID控制 -->
+                        <h3>Pitch PID</h3>
+                        <div class="slider-container">
+                            <label>P 值: <span id="pitch-p-value">0.5</span></label>
+                            <input type="range" id="pitch-p-slider" min="0" max="10" step="0.01" value="0.5">
+                            <input type="number" id="pitch-p-input" min="0" max="10" step="0.01" value="0.5" style="width: 70px;">
+                        </div>
+                        <div class="slider-container">
+                            <label>I 值: <span id="pitch-i-value">0.2</span></label>
+                            <input type="range" id="pitch-i-slider" min="0" max="10", step="0.01" value="0.2">
+                            <input type="number" id="pitch-i-input" min="0" max="10", step="0.01" value="0.2" style="width: 70px;">
+                        </div>
+                        <div class="slider-container">
+                            <label>D 值: <span id="pitch-d-value">0.3</span></label>
+                            <input type="range" id="pitch-d-slider" min="0" max="10", step="0.01" value="0.3">
+                            <input type="number" id="pitch-d-input" min="0" max="10", step="0.01" value="0.3" style="width: 70px;">
+                        </div>
+                    
+                        <!-- Yaw PID控制 -->
+                        <h3>Yaw PID</h3>
+                        <div class="slider-container">
+                            <label>P 值: <span id="yaw-p-value">0.5</span></label>
+                            <input type="range" id="yaw-p-slider" min="0" max="10", step="0.01" value="0.5">
+                            <input type="number" id="yaw-p-input" min="0", max="10", step="0.01" value="0.5" style="width: 70px;">
+                        </div>
+                        <div class="slider-container">
+                            <label>I 值: <span id="yaw-i-value">0.2</span></label>
+                            <input type="range" id="yaw-i-slider" min="0", max="10", step="0.01" value="0.2">
+                            <input type="number" id="yaw-i-input" min="0", max="10", step="0.01" value="0.2" style="width: 70px;">
+                        </div>
+                        <div class="slider-container">
+                            <label>D 值: <span id="yaw-d-value">0.3</span></label>
+                            <input type="range" id="yaw-d-slider" min="0", max="10", step="0.01" value="0.3">
+                            <input type="number" id="yaw-d-input" min="0", max="10", step="0.01" value="0.3" style="width: 70px;">
+                        </div>
+                    
+                        <!-- Roll PID控制 -->
+                        <h3>Roll PID</h3>
+                        <div class="slider-container">
+                            <label>P 值: <span id="roll-p-value">0.5</span></label>
+                            <input type="range" id="roll-p-slider" min="0", max="10", step="0.01" value="0.5">
+                            <input type="number" id="roll-p-input" min="0", max="10", step="0.01" value="0.5" style="width: 70px;">
+                        </div>
+                        <div class="slider-container">
+                            <label>I 值: <span id="roll-i-value">0.2</span></label>
+                            <input type="range", id="roll-i-slider" min="0", max="10", step="0.01" value="0.2">
+                            <input type="number" id="roll-i-input" min="0", max="10", step="0.01" value="0.2" style="width: 70px;">
+                        </div>
+                        <div class="slider-container">
+                            <label>D 值: <span id="roll-d-value">0.3</span></label>
+                            <input type="range", id="roll-d-slider" min="0", max="10", step="0.01" value="0.3">
+                            <input type="number" id="roll-d-input" min="0", max="10", step="0.01" value="0.3" style="width: 70px;">
+                        </div>
+                    
+                        <div class="pid-actions">
+                            <button id="init-pid">初始化PID</button>
+                            <button id="update-pid">更新参数</button>
+                            <button id="save-pid">保存参数</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>无人机姿态展示</h2>
+            <div id="model-container">
+                <div class="loading-overlay">
+                    <div class="spinner"></div>
+                    <p>加载飞行器模型中...</p>
+                </div>
+                <div class="x-axis axis-line"></div>
+                <div class="y-axis axis-line"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'; 
+
+        // 端口
+        let HTTP_port = "81";
+        let WebSocket_port = "9001";
+        let Server_IP = "47.108.224.73"
+
+        // 全局变量
+        let socket = null;
+        let deviceId = "";
+        let currentModel = null;
+        let fileList = [];
+        
+        // DOM 元素
+        const connectBtn = document.getElementById('connect-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const statusIndicator = document.getElementById('status-indicator');
+        const deviceIdInput = document.getElementById('device-id');
+        const dataOutput = document.getElementById('data-output');
+        const fileListContainer = document.getElementById('file-list');
+        const uploadBtn = document.getElementById('upload-btn');
+        const firmwareFile = document.getElementById('firmware-file');
+        const fileDescription = document.getElementById('file-description');
+        const pidUpdateBtn = document.getElementById('update-pid');
+        const refreshFileListBtn = document.getElementById('refresh-file-list');
+        
+        // 初始化函数
+        function init() {
+            initTabs();
+            initWebSocket();
+            init3DModel(); // 初始化3D模型
+            fetchFileList();
+            setupEventListeners();
+        }
+        
+        // 初始化标签页
+        function initTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content > div').forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+                });
+            });
+        }
+        
+        // 初始化WebSocket
+        function initWebSocket() {
+            connectBtn.addEventListener('click', () => {
+                deviceId = deviceIdInput.value.trim();
+                
+                if (deviceId.length !== 8) {
+                    alert('设备ID必须是8个字符');
+                    return;
+                }
+                
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.close();
+                }
+                
+                // 连接WebSocket服务器
+                socket = new WebSocket('ws://' + Server_IP + ':' + WebSocket_port);
+                
+                socket.onopen = () => {
+                    statusIndicator.classList.remove('connected');
+                    // 发送设备认证信息
+                    const authData = JSON.stringify({ 
+                        OTA_Device_ID: deviceId 
+                    });
+                    socket.send(authData);
+                    logMessage('连接已建立，正在验证设备...');
+
+                    fetchFileList();
+                };
+                
+                socket.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleIncomingData(data);
+                    } catch (e) {
+                        logMessage(`无效数据: ${event.data}`);
+                    }
+                };
+                
+                socket.onerror = (error) => {
+                    logMessage(`WebSocket错误: ${error.message}`);
+                    statusIndicator.classList.remove('connected');
+                };
+                
+                socket.onclose = () => {
+                    logMessage('连接已关闭');
+                    statusIndicator.classList.remove('connected');
+                };
+            });
+        }
+        
+        // 初始化Three.js场景
+        let scene, camera, renderer, drone;
+        let roll = 0, pitch = 0, yaw = 0;
+        let mixer, clock;
+        // 初始化3D模型
+        function init3DModel() {
+            // 创建场景
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xffffff);
+            scene.fog = new THREE.Fog(0x0a0a2a, 20, 100);
+            
+             // 创建相机
+            const container = document.getElementById('model-container');
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 1.6, 2); 
+            
+            // 创建渲染器
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            container.appendChild(renderer.domElement);
+            
+            // 添加光源 - 增强光照以适应白色背景
+            const ambientLight = new THREE.AmbientLight(0x404040, 3.0); // 增加环境光强度
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0); // 增加主光源强度
+            directionalLight.position.set(3, 5, 5);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+            
+            // 添加坐标轴辅助 - 使用深色以便在白色背景上可见
+            const axesHelper = new THREE.AxesHelper(2);
+            axesHelper.material.depthTest = false;
+            scene.add(axesHelper);
+            
+            // 添加网格地面 - 使用深灰色
+            const gridHelper = new THREE.GridHelper(10, 10, 0x222222, 0x444444);
+            gridHelper.position.y = -1;
+            scene.add(gridHelper);
+            
+            // 创建时钟
+            clock = new THREE.Clock();
+            
+            // 加载无人机模型
+            loadDroneModel();
+            
+            // 开始动画循环
+            animate();
+        }
+        
+        // 加载无人机模型
+        function loadDroneModel() {
+            const loader = new GLTFLoader();
+            const container = document.getElementById('model-container');
+            const loadingOverlay = container.querySelector('.loading-overlay');
+            // 注意：这里使用white_drone.glb模型路径，请确保文件路径正确
+            loader.load("http://" + Server_IP + "/monitor/white_drone.glb", function(gltf) {
+                drone = gltf.scene;
+                drone.scale.set(2, 2, 2);
+                drone.position.y = 0;
+                
+                // 设置旋转顺序
+                drone.rotation.order = 'YXZ';
+                
+                // 设置阴影
+                drone.traverse(function(child) {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+                
+                scene.add(drone);
+                
+                // 如果有动画，则设置动画混合器
+                if (gltf.animations && gltf.animations.length) {
+                    mixer = new THREE.AnimationMixer(drone);
+                    const action = mixer.clipAction(gltf.animations[0]);
+                    action.play();
+                }
+                
+                // 隐藏加载界面
+                loadingOverlay.style.display = 'none';
+                
+            }, undefined, function(error) {
+                console.error('模型加载失败:', error);
+                loadingOverlay.innerHTML = '<p style="color:#ff5555">模型加载失败，请检查文件路径</p>';
+            });
+        }
+
+        // 动画循环
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // 更新动画混合器
+            if (mixer) {
+                mixer.update(clock.getDelta());
+            }
+            
+            // 更新无人机姿态
+            if (drone) {
+                drone.rotation.x = THREE.MathUtils.degToRad(pitch);
+                drone.rotation.y = THREE.MathUtils.degToRad(yaw);
+                drone.rotation.z = THREE.MathUtils.degToRad(roll);
+            }
+            
+            // 使相机围绕场景旋转
+            const time = Date.now() * 0.0001;
+            camera.position.x = Math.sin(time) * 8;
+            camera.position.z = Math.cos(time) * 8;
+            camera.lookAt(scene.position);
+            
+            renderer.render(scene, camera);
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // RESET按钮事件处理
+            resetBtn.addEventListener('click', () => {
+                if (!socket || socket.readyState !== WebSocket.OPEN) {
+                    alert('请先连接到WebSocket服务器');
+                    return;
+                }
+                
+                // 发送RESET命令
+                const resetData = JSON.stringify({ method: "RESET" });
+                socket.send(resetData);
+                logMessage('已发送RESET命令');
+            });
+
+            // 更新文件列表按钮事件
+            refreshFileListBtn.addEventListener('click', () => {
+                if (!deviceId) {
+                    alert('请先输入设备ID并连接');
+                    return;
+                }
+                logMessage('正在更新文件列表...');
+                fetchFileList();
+            });
+
+            // 文件上传
+            uploadBtn.addEventListener('click', () => {
+                const file = firmwareFile.files[0];
+                if (!file) {
+                    alert('请选择固件文件');
+                    return;
+                }
+                
+                const fileName = file.name;
+                const isValid = /^v(\d{1,3})\.(\d{1,3})\.bin$/.test(fileName);
+                
+                if (!isValid) {
+                    alert('文件名格式应为vxx.xx.bin，其中xx为0-255的数字');
+                    return;
+                }
+                
+                const description = fileDescription.value.trim() || fileName;
+                
+                // 创建表单数据
+                const formData = new FormData();
+                formData.append('device_id', deviceId);
+                formData.append('firmware', file);
+                formData.append('description', description);
+                
+                // 发送上传请求
+                fetch("http://" + Server_IP + ":" + HTTP_port + "/ota/${deviceId}/upload", {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('文件上传成功');
+                        fetchFileList();
+                    } else {
+                        alert(`上传失败: ${data.message}`);
+                    }
+                })
+                .catch(error => {
+                    alert(`上传错误: ${error.message}`);
+                });
+            });
+            
+            // 新增下载按钮事件处理
+            document.getElementById('download-bootloader').addEventListener('click', () => {
+                // 下载Bootloader逻辑
+                logMessage('开始下载Bootloader...');
+                
+                // 创建下载链接
+                const downloadUrl = 'http://'+ Server_IP + ':/monitor/Bootloader.zip';
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = 'Bootloader.bin';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                logMessage('Bootloader下载已启动');
+            });
+            
+            document.getElementById('download-app').addEventListener('click', () => {
+                // 下载示例APP逻辑
+                logMessage('开始下载示例APP...');
+                
+                // 创建下载链接
+                const downloadUrl = 'http://' + Server_IP + '/monitor/Sample_App.zip';
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = 'Sample_App.bin';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                logMessage('示例APP下载已启动');
+            });
+            
+            // 双向绑定滑块和输入框
+            function bindSliderInput(sliderId, inputId, valueSpanId) {
+                const slider = document.getElementById(sliderId);
+                const input = document.getElementById(inputId);
+                const valueSpan = document.getElementById(valueSpanId);
+                
+                slider.addEventListener('input', (e) => {
+                    input.value = e.target.value;
+                    valueSpan.textContent = e.target.value;
+                });
+                
+                input.addEventListener('input', (e) => {
+                    slider.value = e.target.value;
+                    valueSpan.textContent = e.target.value;
+                });
+            }
+            
+            // 绑定所有PID控制项
+            const pidControls = [
+                { prefix: 'pitch', labels: ['p', 'i', 'd'] },
+                { prefix: 'yaw', labels: ['p', 'i', 'd'] },
+                { prefix: 'roll', labels: ['p', 'i', 'd'] }
+            ];
+            
+            pidControls.forEach(control => {
+                control.labels.forEach(label => {
+                    const sliderId = `${control.prefix}-${label}-slider`;
+                    const inputId = `${control.prefix}-${label}-input`;
+                    const valueSpanId = `${control.prefix}-${label}-value`;
+                    bindSliderInput(sliderId, inputId, valueSpanId);
+                });
+            });
+            // 初始化PID按钮
+            document.getElementById('init-pid').addEventListener('click', () => {
+                if (!socket || socket.readyState !== WebSocket.OPEN) {
+                    alert('请先连接到WebSocket服务器');
+                    return;
+                }
+                
+                if (!deviceId) {
+                    alert('请先输入设备ID并完成认证');
+                    return;
+                }
+                
+                const initData = {
+                    method: "init PID"
+                };
+                
+                socket.send(JSON.stringify(initData));
+                logMessage('已发送PID初始化命令');
+            });
+
+            // 更新参数按钮
+            document.getElementById('update-pid').addEventListener('click', () => {
+                if (!socket || socket.readyState !== WebSocket.OPEN) {
+                    alert('请先连接到WebSocket服务器');
+                    return;
+                }
+                
+                const pidData = {
+                    method: "update PID",
+                    Pitch_P: parseFloat(document.getElementById('pitch-p-slider').value),
+                    Pitch_I: parseFloat(document.getElementById('pitch-i-slider').value),
+                    Pitch_D: parseFloat(document.getElementById('pitch-d-slider').value),
+                    Yaw_P: parseFloat(document.getElementById('yaw-p-slider').value),
+                    Yaw_I: parseFloat(document.getElementById('yaw-i-slider').value),
+                    Yaw_D: parseFloat(document.getElementById('yaw-d-slider').value),
+                    Roll_P: parseFloat(document.getElementById('roll-p-slider').value),
+                    Roll_I: parseFloat(document.getElementById('roll-i-slider').value),
+                    Roll_D: parseFloat(document.getElementById('roll-d-slider').value)
+                };
+                
+                socket.send(JSON.stringify(pidData));
+                logMessage(`PID参数已更新`);
+            });
+        
+            // 保存参数按钮
+            document.getElementById('save-pid').addEventListener('click', () => {
+                if (!socket || socket.readyState !== WebSocket.OPEN) {
+                    alert('请先连接到WebSocket服务器');
+                    return;
+                }
+                
+                const pidData = {
+                    method: "save PID",
+                    Pitch_P: parseFloat(document.getElementById('pitch-p-slider').value),
+                    Pitch_I: parseFloat(document.getElementById('pitch-i-slider').value),
+                    Pitch_D: parseFloat(document.getElementById('pitch-d-slider').value),
+                    Yaw_P: parseFloat(document.getElementById('yaw-p-slider').value),
+                    Yaw_I: parseFloat(document.getElementById('yaw-i-slider').value),
+                    Yaw_D: parseFloat(document.getElementById('yaw-d-slider').value),
+                    Roll_P: parseFloat(document.getElementById('roll-p-slider').value),
+                    Roll_I: parseFloat(document.getElementById('roll-i-slider').value),
+                    Roll_D: parseFloat(document.getElementById('roll-d-slider').value)
+                };
+                
+                socket.send(JSON.stringify(pidData));
+                logMessage(`PID参数已保存`);
+            });
+            
+            // 滑块值显示
+            document.getElementById('p-slider').addEventListener('input', (e) => {
+                document.getElementById('p-value').textContent = e.target.value;
+            });
+            
+            document.getElementById('i-slider').addEventListener('input', (e) => {
+                document.getElementById('i-value').textContent = e.target.value;
+            });
+            
+            document.getElementById('d-slider').addEventListener('input', (e) => {
+                document.getElementById('d-value').textContent = e.target.value;
+            });
+        }
+        
+        // 处理接收到的数据
+        function handleIncomingData(data) {
+            if(data.ping){
+                logMessage("recv PING information");
+                return
+            }
+
+            // 处理连接状态
+            if (data.information) {
+                logMessage(data.information);
+                
+                if (data.connected === 'on') {
+                    statusIndicator.classList.add('connected');
+                } else {
+                    statusIndicator.classList.remove('connected');
+                }
+            }
+            
+            // 处理传感器数据
+            if (data.gy86 && document.getElementById('filter-gy86').checked) {
+                logMessage(`GY86数据: ${JSON.stringify(data.gy86)}`);
+                
+                roll = data.roll;
+                pitch = data.pitch;
+                yaw = data.yaw;
+            }
+            
+            if (data.servo && document.getElementById('filter-servo').checked) {
+                logMessage(`舵机数据: ${JSON.stringify(data.servo)}`);
+            }
+            
+            if (data.log && document.getElementById('filter-log').checked) {
+                logMessage(`日志: ${data.log}`);
+            }
+
+            // 处理PID设置
+            if (data.PID_set) {
+                
+                // 更新Pitch PID
+                const pitchP = Number(data.Pitch_P).toFixed(2);
+                document.getElementById('pitch-p-slider').value = pitchP;
+                document.getElementById('pitch-p-input').value = pitchP;
+                document.getElementById('pitch-p-value').textContent = pitchP;
+
+                const pitchI = Number(data.Pitch_I).toFixed(2);
+                document.getElementById('pitch-i-slider').value = pitchI;
+                document.getElementById('pitch-i-input').value = pitchI;
+                document.getElementById('pitch-i-value').textContent = pitchI;
+
+                const pitchD = Number(data.Pitch_D).toFixed(2);
+                document.getElementById('pitch-d-slider').value = pitchD;
+                document.getElementById('pitch-d-input').value = pitchD;
+                document.getElementById('pitch-d-value').textContent = pitchD;
+
+                // 更新Yaw PID
+                const yawP = Number(data.Yaw_P).toFixed(2);
+                document.getElementById('yaw-p-slider').value = yawP;
+                document.getElementById('yaw-p-input').value = yawP;
+                document.getElementById('yaw-p-value').textContent = yawP;
+
+                const yawI = Number(data.Yaw_I).toFixed(2);
+                document.getElementById('yaw-i-slider').value = yawI;
+                document.getElementById('yaw-i-input').value = yawI;
+                document.getElementById('yaw-i-value').textContent = yawI;
+
+                const yawD = Number(data.Yaw_D).toFixed(2);
+                document.getElementById('yaw-d-slider').value = yawD;
+                document.getElementById('yaw-d-input').value = yawD;
+                document.getElementById('yaw-d-value').textContent = yawD;
+
+                // 更新Roll PID
+                const rollP = Number(data.Roll_P).toFixed(2);
+                document.getElementById('roll-p-slider').value = rollP;
+                document.getElementById('roll-p-input').value = rollP;
+                document.getElementById('roll-p-value').textContent = rollP;
+
+                const rollI = Number(data.Roll_I).toFixed(2);
+                document.getElementById('roll-i-slider').value = rollI;
+                document.getElementById('roll-i-input').value = rollI;
+                document.getElementById('roll-i-value').textContent = rollI;
+
+                const rollD = Number(data.Roll_D).toFixed(2);
+                document.getElementById('roll-d-slider').value = rollD;
+                document.getElementById('roll-d-input').value = rollD;
+                document.getElementById('roll-d-value').textContent = rollD;
+
+                logMessage('接收到新PID设置');
+            }
+        }
+        
+        // 更新无人机姿态
+        function updateDroneOrientation(gy86Data) {
+            if (!currentModel) return;
+            
+            // 根据陀螺仪数据更新无人机姿态
+            currentModel.rotation.x = gy86Data.roll * Math.PI / 180;
+            currentModel.rotation.y = gy86Data.pitch * Math.PI / 180;
+            currentModel.rotation.z = gy86Data.yaw * Math.PI / 180;
+        }
+        
+        // 获取文件列表
+        function fetchFileList() {
+            if (!deviceId) return;
+            
+            fetch('http://' + Server_IP + ':' + HTTP_port + '/ota/${deviceId}/files')
+                .then(response => response.json())
+                .then(data => {
+                    fileList = data.files || [];
+                    renderFileList();
+                    logMessage(`文件列表更新完成，共 ${fileList.length} 个文件`);
+                })
+                .catch(error => {
+                    logMessage(`获取文件列表失败: ${error.message}`);
+                });
+        }
+        
+        // 渲染文件列表
+        function renderFileList() {
+            fileListContainer.innerHTML = '';
+            
+            fileList.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = `file-item ${file.active ? 'active' : ''}`;
+                fileItem.innerHTML = `
+                    <div>
+                        <strong>${file.name}</strong>
+                        <div>${file.description}</div>
+                    </div>
+                    <div class="file-actions">
+                        ${file.active ? '' : `<button class="set-active" data-file="${file.name}">设为当前</button>`}
+                        <button class="download-btn" data-file="${file.name}">下载</button>
+                        <button class="delete-btn" data-file="${file.name}">删除</button>
+                    </div>
+                `;
+                
+                fileListContainer.appendChild(fileItem);
+            });
+            
+            // 添加事件监听器
+            document.querySelectorAll('.set-active').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    setActiveFile(e.target.dataset.file);
+                });
+            });
+            
+            document.querySelectorAll('.download-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    downloadFile(e.target.dataset.file);
+                });
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    deleteFile(e.target.dataset.file);
+                });
+            });
+        }
+        
+        // 设置当前活动文件
+        function setActiveFile(fileName) {
+            fetch('http://' + Server_IP + ':' + HTTP_port +'/ota/${deviceId}/set-active', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ file: fileName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    logMessage(`已设置当前下载文件: ${fileName}`);
+                    fetchFileList();
+                } else {
+                    logMessage(`设置失败: ${data.message}`);
+                }
+            })
+            .catch(error => {
+                logMessage(`设置错误: ${error.message}`);
+            });
+        }
+        
+        // 下载文件
+        function downloadFile(fileName) {
+            const url = 'http://' + Server_IP + ':' + HTTP_port + '/ota/${deviceId}/download/${fileName}';
+            window.open(url, '_blank');
+        }
+        
+        // 删除文件
+        function deleteFile(fileName) {
+            if (!confirm(`确定要删除文件 ${fileName} 吗?`)) return;
+            
+            fetch('http://' + Server_IP + ':' + HTTP_port +'/ota/${deviceId}/delete/${fileName}', {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    logMessage(`文件已删除: ${fileName}`);
+                    fetchFileList();
+                } else {
+                    logMessage(`删除失败: ${data.message}`);
+                }
+            })
+            .catch(error => {
+                logMessage(`删除错误: ${error.message}`);
+            });
+        }
+        
+        // 日志消息处理
+        function logMessage(message) {
+            const now = new Date();
+            const timestamp = `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}] `;
+            dataOutput.innerHTML += `${timestamp}${message}\n`;
+            dataOutput.scrollTop = dataOutput.scrollHeight;
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

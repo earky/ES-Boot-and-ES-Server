@@ -1,0 +1,93 @@
+; AREA MYCODE,CODE
+;	 ENTRY
+;	 EXPORT RCC
+;RCC
+;	;开启HSE
+;	LDR R0,=0x40023800
+;	ORR R1,#(1<<16)
+;	STR R1,[R0]
+;	;等待HSE准备就绪
+;HSE_LOOP
+;	LDR R1,[R0]
+;	LSR R1,R1,#16
+;	LSR R1,R1,#1
+;	AND R1,#1
+;	CMP R1,#1
+;	BNE HSE_LOOP
+;;?? 如果加入HSE是否准备就绪的判断循环会出现死循环？？
+;	;配置PLLM = 2
+;	LDR R0,=0X40023800+0X04
+;	LDR R1,[R0]
+;	ORR R1,#0X2
+;	STR R1,[R0]
+;	;配置PLLN = 432   110110000
+;	LDR R1,[R0]
+;	ORR R1,#(0X1B<<10)
+;	AND R1,#~(0X4F<<6)
+;	STR R1,[R0]
+;	;配置PLLP = 2
+;	LDR R1,[R0]
+;	AND R1,#~(0X3<<16)
+;	STR R1,[R0]
+;	;开启PLL
+;	LDR R0,=0x40023800
+;	LDR R1,[R0]
+;	ORR R1,#(1<<24)
+;	;PLL倍频 108
+;	
+;	;HPER AHB预分频 64 1100
+;	LDR R0,=0X40023800+0X08
+;	LDR R1,[R0]
+;	ORR R1,#(0X3<<6)
+;	AND R1,#~(0X3<<4)
+;	STR R1,[R0]
+;	;8*106/64 = 13.25MHZ
+;	
+;	;LED亮灭控制
+;	LDR R0,=0x40023800+0x30		
+;	LDR R1,[R0]					
+;	ORR R1,R1,#0x01				
+;	STR R1,[R0]					
+;	
+;	LDR R0,=0x40020000		 	
+;	LDR R2,[R0]					
+;	BIC R1,R1,#(0X3<<5)
+;	ORR R1,R1,#(0X1<<10)			
+;	STR R1,[R0]
+;	
+;	LDR R0,=0X40020000+0X08
+;	LDR R1,[R0]
+;	BIC R1,R1,#(0X3<<5)
+;	STR R1,[R0]
+;	
+;LOOP
+;	BL DELAY
+;	BL LED_ON
+;	BL DELAY
+;	BL LED_OFF
+;	
+;	B LOOP
+;	
+
+;LED_ON
+;	LDR R0,=0x40020000+0x14 	;GPIOA的输出端
+;	LDR R1,[R0]					;将R0中的值载入R2
+;	ORR R1,R1,#(1<<5)
+;	STR R1,[R0]
+;	BX LR
+;	
+;LED_OFF
+;	LDR R0,=0x40020000+0x14 	;GPIOA的输出端
+;	LDR R1,[R0]					;将R0中的值载入R2
+;	AND	R1,R1,#~(1<<5)
+;	STR R1,[R0]
+;	BX LR
+;	
+;DELAY
+;	MOV R2,#(0X00100000)
+;X
+;	SUBS R2,R2,#1
+;	BNE X
+;	BX LR
+;	
+;	END

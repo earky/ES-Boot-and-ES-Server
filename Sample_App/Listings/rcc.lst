@@ -1,0 +1,115 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ; AREA MYCODE,CODE
+    2 00000000         ;  ENTRY
+    3 00000000         ;  EXPORT RCC
+    4 00000000         ;RCC
+    5 00000000         ; ;开启HSE
+    6 00000000         ; LDR R0,=0x40023800
+    7 00000000         ; ORR R1,#(1<<16)
+    8 00000000         ; STR R1,[R0]
+    9 00000000         ; ;等待HSE准备就绪
+   10 00000000         ;HSE_LOOP
+   11 00000000         ; LDR R1,[R0]
+   12 00000000         ; LSR R1,R1,#16
+   13 00000000         ; LSR R1,R1,#1
+   14 00000000         ; AND R1,#1
+   15 00000000         ; CMP R1,#1
+   16 00000000         ; BNE HSE_LOOP
+   17 00000000         ;;?? 如果加入HSE是否准备就绪的判断循环会
+                       出现死循环？？
+   18 00000000         ; ;配置PLLM = 2
+   19 00000000         ; LDR R0,=0X40023800+0X04
+   20 00000000         ; LDR R1,[R0]
+   21 00000000         ; ORR R1,#0X2
+   22 00000000         ; STR R1,[R0]
+   23 00000000         ; ;配置PLLN = 432   110110000
+   24 00000000         ; LDR R1,[R0]
+   25 00000000         ; ORR R1,#(0X1B<<10)
+   26 00000000         ; AND R1,#~(0X4F<<6)
+   27 00000000         ; STR R1,[R0]
+   28 00000000         ; ;配置PLLP = 2
+   29 00000000         ; LDR R1,[R0]
+   30 00000000         ; AND R1,#~(0X3<<16)
+   31 00000000         ; STR R1,[R0]
+   32 00000000         ; ;开启PLL
+   33 00000000         ; LDR R0,=0x40023800
+   34 00000000         ; LDR R1,[R0]
+   35 00000000         ; ORR R1,#(1<<24)
+   36 00000000         ; ;PLL倍频 108
+   37 00000000         ; 
+   38 00000000         ; ;HPER AHB预分频 64 1100
+   39 00000000         ; LDR R0,=0X40023800+0X08
+   40 00000000         ; LDR R1,[R0]
+   41 00000000         ; ORR R1,#(0X3<<6)
+   42 00000000         ; AND R1,#~(0X3<<4)
+   43 00000000         ; STR R1,[R0]
+   44 00000000         ; ;8*106/64 = 13.25MHZ
+   45 00000000         ; 
+   46 00000000         ; ;LED亮灭控制
+   47 00000000         ; LDR R0,=0x40023800+0x30  
+   48 00000000         ; LDR R1,[R0]     
+   49 00000000         ; ORR R1,R1,#0x01    
+   50 00000000         ; STR R1,[R0]     
+   51 00000000         ; 
+   52 00000000         ; LDR R0,=0x40020000    
+   53 00000000         ; LDR R2,[R0]     
+   54 00000000         ; BIC R1,R1,#(0X3<<5)
+   55 00000000         ; ORR R1,R1,#(0X1<<10)   
+   56 00000000         ; STR R1,[R0]
+   57 00000000         ; 
+   58 00000000         ; LDR R0,=0X40020000+0X08
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   59 00000000         ; LDR R1,[R0]
+   60 00000000         ; BIC R1,R1,#(0X3<<5)
+   61 00000000         ; STR R1,[R0]
+   62 00000000         ; 
+   63 00000000         ;LOOP
+   64 00000000         ; BL DELAY
+   65 00000000         ; BL LED_ON
+   66 00000000         ; BL DELAY
+   67 00000000         ; BL LED_OFF
+   68 00000000         ; 
+   69 00000000         ; B LOOP
+   70 00000000         ; 
+   71 00000000         
+   72 00000000         ;LED_ON
+   73 00000000         ; LDR R0,=0x40020000+0x14  ;GPIOA的输出端
+   74 00000000         ; LDR R1,[R0]     ;将R0中的值载入R2
+   75 00000000         ; ORR R1,R1,#(1<<5)
+   76 00000000         ; STR R1,[R0]
+   77 00000000         ; BX LR
+   78 00000000         ; 
+   79 00000000         ;LED_OFF
+   80 00000000         ; LDR R0,=0x40020000+0x14  ;GPIOA的输出端
+   81 00000000         ; LDR R1,[R0]     ;将R0中的值载入R2
+   82 00000000         ; AND R1,R1,#~(1<<5)
+   83 00000000         ; STR R1,[R0]
+   84 00000000         ; BX LR
+   85 00000000         ; 
+   86 00000000         ;DELAY
+   87 00000000         ; MOV R2,#(0X00100000)
+   88 00000000         ;X
+   89 00000000         ; SUBS R2,R2,#1
+   90 00000000         ; BNE X
+   91 00000000         ; BX LR
+   92 00000000         ; 
+   93 00000000         ; END
+                       
+Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp --apcs=int
+erwork --depend=.\objects\rcc.d -o.\objects\rcc.o -I.\RTE\_Target_1 -IC:\downlo
+ad\Keil5\ARM\PACK\Keil\STM32F4xx_DFP\2.17.1\Drivers\CMSIS\Device\ST\STM32F4xx\I
+nclude -IC:\download\Keil5\ARM\CMSIS\Include -IC:\download\Keil5\ARM\PACK\Keil\
+STM32F4xx_DFP\2.17.1\Device\Include --predefine="__EVAL SETA 1" --predefine="__
+MICROLIB SETA 1" --predefine="__UVISION_VERSION SETA 527" --predefine="STM32F40
+1xE SETA 1" --list=.\listings\rcc.lst function\RCC.s
+334 symbols in table

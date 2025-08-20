@@ -1,0 +1,77 @@
+#include "stm32f4xx.h"                  // Device header
+#include "stm32f4xx_gpio.h"
+#include "stm32f4xx_rcc.h"
+#include "stm32f4xx_tim.h"
+
+#include "OLED.h"
+
+void PWM_Init(void)
+{
+	//开启时钟
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA,ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1,ENABLE);
+	
+	//初始化GPIO
+	GPIO_InitTypeDef GPIO_InitStruct;
+	
+	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11;
+	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOA, &GPIO_InitStruct);
+	
+	//设置GPIO口为复用
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource8, GPIO_AF_TIM1); // PA8 -> TIM1_CH1
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_TIM1); // PA9 -> TIM1_CH2
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_TIM1); // PA10 -> TIM1_CH3
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource11, GPIO_AF_TIM1); // PA11 -> TIM1_CH4
+
+	
+	//初始化时基单元
+	TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStruct;
+	TIM_TimeBaseInitStruct.TIM_ClockDivision = TIM_CKD_DIV1;
+	TIM_TimeBaseInitStruct.TIM_CounterMode = TIM_CounterMode_Up;
+	TIM_TimeBaseInitStruct.TIM_Prescaler =  268-1; //预分频器系数，主频是84MHz的话，84MHz/84 = 1000kHz
+	TIM_TimeBaseInitStruct.TIM_Period =1700-1; // 
+	TIM_TimeBaseInitStruct.TIM_RepetitionCounter = 0;
+	TIM_TimeBaseInit(TIM1, &TIM_TimeBaseInitStruct);
+	
+	//初始化输出比较通道
+	TIM_OCInitTypeDef TIM_OCInitStruct;
+	TIM_OCStructInit(&TIM_OCInitStruct);
+	TIM_OCInitStruct.TIM_OCMode = TIM_OCMode_PWM1; // PWM 模式 1
+	TIM_OCInitStruct.TIM_OutputState = TIM_OutputState_Enable; // 启用输出
+	TIM_OCInitStruct.TIM_OCPolarity = TIM_OCPolarity_High; // 输出极性
+	TIM_OCInitStruct.TIM_Pulse = 0; //CCR,设置占空比，范围为0-ARR
+	TIM_OC1Init(TIM1, &TIM_OCInitStruct);
+	TIM_OC2Init(TIM1, &TIM_OCInitStruct);
+	TIM_OC3Init(TIM1, &TIM_OCInitStruct);
+	TIM_OC4Init(TIM1, &TIM_OCInitStruct);
+	
+	TIM_Cmd(TIM1, ENABLE); // 启动定时器
+	TIM_CtrlPWMOutputs(TIM1, ENABLE); // 启用 PWM 输出，高级定时器才有
+}
+
+
+//控制四个电机转速的函数，参数为占空比，0-100
+void change_DutyCycle_Motor1(uint16_t DutyCycle)
+{
+	TIM_SetCompare1(TIM1,DutyCycle);
+//    OLED_ShowNum(1,1,(DutyCycle-100)+85,5);
+}
+
+void change_DutyCycle_Motor2(uint16_t DutyCycle)
+{
+	TIM_SetCompare2(TIM1,DutyCycle);
+}
+
+void change_DutyCycle_Motor3(uint16_t DutyCycle)
+{
+	TIM_SetCompare3(TIM1,DutyCycle);
+}
+
+void change_DutyCycle_Motor4(uint16_t DutyCycle)
+{
+	TIM_SetCompare4(TIM1,DutyCycle);
+}

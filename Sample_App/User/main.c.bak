@@ -1,0 +1,59 @@
+#include "stm32f4xx.h"                  // Device header
+#include "Delay.h"
+#include "OLED.h"
+#include "Receiver.h"
+#include "misc.h"
+#include "Motor.h"
+#include "USART.h"
+#include "GY_86.h"
+#include "stdio.h"
+
+void Calculate();
+
+int16_t MPU6050_Data[7],HMC5883L_Data[3];
+
+int main()
+{
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
+    OLED_Init();
+    GY_86_Init();
+    PWM_Init();
+    Receiver_Init();
+    Serial_Init();
+    
+    while(1)
+    {
+        OLED_ShowNum(1,1,Receiver_Data[0],5);
+        OLED_ShowNum(2,1,Receiver_Data[1],5);
+        OLED_ShowNum(3,1,Receiver_Data[2],5);
+        OLED_ShowNum(4,1,Receiver_Data[3],5);
+        
+//        MPU6050_GetData(MPU6050_Data);
+//        OLED_ShowSignedNum(1,1,MPU6050_Data[0],5);
+//        OLED_ShowSignedNum(2,1,MPU6050_Data[1],5);
+//        OLED_ShowSignedNum(3,1,MPU6050_Data[2],5);
+//        OLED_ShowSignedNum(1,7,MPU6050_Data[4],5);
+//        OLED_ShowSignedNum(2,7,MPU6050_Data[5],5);
+//        OLED_ShowSignedNum(3,7,MPU6050_Data[6],5);
+//        
+//        HMC5883L_GetData(HMC5883L_Data);
+//        OLED_ShowSignedNum(4,1,HMC5883L_Data[0],4);
+//        OLED_ShowSignedNum(4,6,HMC5883L_Data[1],4);
+//        OLED_ShowSignedNum(4,11,HMC5883L_Data[2],4);
+//        
+//        printf("%2d %2d %2d %2d\r\n",Receiver_Data[0],Receiver_Data[1],Receiver_Data[2],Receiver_Data[3]);
+//        
+        Calculate();
+    }
+    
+}
+
+void Calculate()
+{
+    change_DutyCycle_Motor1(Receiver_Data[2]);
+    change_DutyCycle_Motor2(Receiver_Data[2]);
+    change_DutyCycle_Motor3(Receiver_Data[2]);
+//    change_DutyCycle_Motor4(Receiver_Data[2]);
+}
+
+
